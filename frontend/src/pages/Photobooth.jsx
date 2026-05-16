@@ -8,7 +8,7 @@ const LAYOUTS = {
   strip:           { label: 'Digital Strip',    count: 3, desc: '3 foto vertikal' },
   strip_double:    { label: 'Double Strip',      count: 3, desc: '3 foto ×2 (print ready)' },
   '6_grid':        { label: 'Classic Grid',      count: 6, desc: '6 foto grid 2×3' },
-  '6_grid_double': { label: 'Double Grid',       count: 6, desc: '6 foto ×2 (print ready)' },
+  '6_grid_double': { label: 'Double Strip 6',    count: 6, desc: '6 foto → 2 strip (3+3)' },
 };
 
 function drawBackground(ctx, w, h, theme, cc) {
@@ -68,13 +68,10 @@ async function generateCanvas(photos, layout, theme, brandText, cc) {
     imgs.forEach((img,i)=>{const y=TOP+i*(H+GAP);drawFrame(ctx,img,50,y,W,H,theme,cc);drawFrame(ctx,img,650,y,W,H,theme,cc);});
     drawBrand(ctx,300,FY,theme,brandText,cc);drawBrand(ctx,900,FY,theme,brandText,cc);
   } else if(layout==='6_grid_double'){
+    // Left strip: photos 0,1,2 | Right strip: photos 3,4,5
     ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.setLineDash([20,20]);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(600,0);ctx.lineTo(600,cH);ctx.stroke();ctx.setLineDash([]);
-    const pw=250,ph=370,gh=15,gv=20;
-    imgs.forEach((img,i)=>{
-      const col=i%2,row=Math.floor(i/2),yp=TOP+row*(ph+gv);
-      drawFrame(ctx,img,25+col*(pw+gh),yp,pw,ph,theme,cc);
-      drawFrame(ctx,img,625+col*(pw+gh),yp,pw,ph,theme,cc);
-    });
+    [0,1,2].forEach(i=>drawFrame(ctx,imgs[i],50,TOP+i*(H+GAP),W,H,theme,cc));
+    [3,4,5].forEach(i=>drawFrame(ctx,imgs[i],650,TOP+(i-3)*(H+GAP),W,H,theme,cc));
     drawBrand(ctx,300,FY,theme,brandText,cc);drawBrand(ctx,900,FY,theme,brandText,cc);
   }
   return canvas.toDataURL('image/jpeg',0.92);
