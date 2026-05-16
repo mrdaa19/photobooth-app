@@ -42,11 +42,22 @@ function drawFrame(ctx, img, x, y, w, h, theme, cc) {
   ctx.save(); ctx.translate(x+w,y); ctx.scale(-1,1); ctx.drawImage(img,sx,sy,sw,sh,0,0,w,h); ctx.restore();
 }
 
-function drawBrand(ctx,cx,y,theme,text,cc){
+function drawBrand(ctx,cx,y,theme,text,cc,maxWidth){
   const c=cc?.[theme]||{};ctx.textAlign='center';ctx.shadowBlur=0;
-  if(theme==='theme_01'){ctx.fillStyle=c.accent||'#ef4444';ctx.font="900 52px 'Outfit',sans-serif";ctx.fillText(text||'TAKE IT EASY',cx,y+40);}
-  else if(theme==='theme_02'){ctx.fillStyle=c.accent||'#1e3a8a';ctx.font="900 52px 'Outfit',sans-serif";ctx.fillText(text||'DAYS',cx,y+50);}
-  else{const col=theme==='theme_03'?(c.bg||'#1d4ed8'):(c.bg||'#16a34a');ctx.fillStyle=col;ctx.fillRect(cx-160,y,320,75);ctx.fillStyle='#fff';ctx.font="900 40px 'Outfit',sans-serif";ctx.fillText(text||'MOMENT',cx,y+52);}
+  const label=text||(theme==='theme_01'?'TAKE IT EASY':theme==='theme_02'?'DAYS':'MOMENT');
+  const avail=(maxWidth||500)-20;
+  // Auto-fit: reduce font size until text fits
+  let fs=52;
+  ctx.font=`900 ${fs}px 'Outfit',sans-serif`;
+  while(ctx.measureText(label).width>avail&&fs>14){fs-=2;ctx.font=`900 ${fs}px 'Outfit',sans-serif`;}
+  if(theme==='theme_01'){ctx.fillStyle=c.accent||'#ef4444';ctx.fillText(label,cx,y+fs);}
+  else if(theme==='theme_02'){ctx.fillStyle=c.accent||'#1e3a8a';ctx.fillText(label,cx,y+fs);}
+  else{
+    const col=theme==='theme_03'?(c.bg||'#1d4ed8'):(c.bg||'#16a34a');
+    const tw=ctx.measureText(label).width,pad=20;
+    ctx.fillStyle=col;ctx.fillRect(cx-tw/2-pad,y,tw+pad*2,fs+28);
+    ctx.fillStyle='#fff';ctx.fillText(label,cx,y+fs+6);
+  }
 }
 
 async function generateCanvas(photos, layout, theme, brandText, cc) {
@@ -59,20 +70,20 @@ async function generateCanvas(photos, layout, theme, brandText, cc) {
   const W=500,H=460,GAP=40,TOP=80,FY=1620;
   if(layout==='strip'){
     imgs.forEach((img,i)=>drawFrame(ctx,img,50,TOP+i*(H+GAP),W,H,theme,cc));
-    drawBrand(ctx,300,FY,theme,brandText,cc);
+    drawBrand(ctx,300,FY,theme,brandText,cc,500);
   } else if(layout==='6_grid'){
     imgs.forEach((img,i)=>{const col=i%2,row=Math.floor(i/2);drawFrame(ctx,img,70+col*(W+60),TOP+row*(H+60),W,H,theme,cc);});
-    drawBrand(ctx,600,FY,theme,brandText,cc);
+    drawBrand(ctx,600,FY,theme,brandText,cc,1100);
   } else if(layout==='strip_double'){
     ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.setLineDash([20,20]);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(600,0);ctx.lineTo(600,cH);ctx.stroke();ctx.setLineDash([]);
     imgs.forEach((img,i)=>{const y=TOP+i*(H+GAP);drawFrame(ctx,img,50,y,W,H,theme,cc);drawFrame(ctx,img,650,y,W,H,theme,cc);});
-    drawBrand(ctx,300,FY,theme,brandText,cc);drawBrand(ctx,900,FY,theme,brandText,cc);
+    drawBrand(ctx,300,FY,theme,brandText,cc,500);drawBrand(ctx,900,FY,theme,brandText,cc,500);
   } else if(layout==='6_grid_double'){
     // Left strip: photos 0,1,2 | Right strip: photos 3,4,5
     ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.setLineDash([20,20]);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(600,0);ctx.lineTo(600,cH);ctx.stroke();ctx.setLineDash([]);
     [0,1,2].forEach(i=>drawFrame(ctx,imgs[i],50,TOP+i*(H+GAP),W,H,theme,cc));
     [3,4,5].forEach(i=>drawFrame(ctx,imgs[i],650,TOP+(i-3)*(H+GAP),W,H,theme,cc));
-    drawBrand(ctx,300,FY,theme,brandText,cc);drawBrand(ctx,900,FY,theme,brandText,cc);
+    drawBrand(ctx,300,FY,theme,brandText,cc,500);drawBrand(ctx,900,FY,theme,brandText,cc,500);
   }
   return canvas.toDataURL('image/jpeg',0.92);
 }
